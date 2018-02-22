@@ -17,6 +17,8 @@ class_names = cifar10.load_class_names()
 
 images_train, cls_train, labels_train = cifar10.load_training_data()
 images_test, cls_test, labels_test = cifar10.load_test_data()
+print("images_train.shape",images_train.shape)
+
 
 # init slim, get vgg net
 slim = tf.contrib.slim
