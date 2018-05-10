@@ -1,7 +1,7 @@
 """
 # code is base on this example
 http://warmspringwinds.github.io/tensorflow/tf-slim/2016/10/30/image-classification-and-segmentation-using-tensorflow-and-tf-slim/
-This code is ruunning in coco-animals dataset
+This code is running in coco-animals dataset
 """
 from matplotlib import pyplot as plt
 import numpy as np
@@ -16,40 +16,21 @@ slim = tf.contrib.slim
 model_path = '/tmp/models/animals_coco_vgg16/model.ckpt'
 file_path = '/tmp/datasets/coco-animals/train/bear/*.jpg'
 labels_name = os.listdir('/tmp/datasets/coco-animals/train')
-labels_name.sort()
+
 
 # Load the mean pixel values and the function
 # that performs the subtraction
 from preprocessing.vgg_preprocessing import (_mean_image_subtraction, _R_MEAN, _G_MEAN, _B_MEAN)
 slim = tf.contrib.slim
 
-def preprocess_images(x, input_width, input_height, input_depth, input_mean, input_std):
-    decoded_image_as_float = tf.cast(x, dtype=tf.float32)
-    expand_last_dims = tf.expand_dims(decoded_image_as_float, -1)
-    if input_depth == 3:
-        expand_last_dims = tf.image.grayscale_to_rgb(expand_last_dims)
-    expand_first_dims = tf.expand_dims(expand_last_dims, 0)
-
-    resize_shape = tf.stack([input_height, input_width])
-    resize_shape_as_int = tf.cast(resize_shape, dtype=tf.int32)
-    resize_image = tf.image.resize_bilinear(expand_first_dims, resize_shape_as_int)
-
-    offset_image = tf.subtract(resize_image, input_mean)
-    mul_image = tf.multiply(offset_image, 1.0 / input_std)
-
-    return mul_image
-
 file_list = glob.glob(file_path)
-
 for file_name in file_list:
     print(file_name)
 
-
     with tf.Graph().as_default():
 
+        # preprocess_images
         input_name = "file_reader"
-
-        ''' original '''
         file_reader = tf.read_file(file_name, input_name)
         image = tf.Print(file_reader, [tf.shape(file_reader)], "file_reader")
 
@@ -57,10 +38,10 @@ for file_name in file_list:
         image = tf.image.decode_jpeg(image, channels=3)
         image = tf.Print(image, [tf.shape(image)], "file_reader")
 
-        # Convert image to float32 before subtracting the
-        # mean pixel value
+        # Convert image to float32 before subtracting the mean pixel value
         image_float = tf.to_float(image, name='ToFloat')
         image_float = tf.Print(image_float, [tf.shape(image_float)], "image_float")
+
         # Subtract the mean pixel value from each pixel
         processed_image = _mean_image_subtraction(image_float, [_R_MEAN, _G_MEAN, _B_MEAN])
         processed_image = tf.Print(processed_image, [tf.shape(processed_image)], "processed_image")
@@ -68,6 +49,7 @@ for file_name in file_list:
         input_image = tf.expand_dims(processed_image, 0)
         input_image = tf.Print(input_image, [tf.shape(input_image)], "input_image")
 
+        # because this would be a FCNN you can increase the input resolution
         input_image = tf.image.resize_images(input_image, [480*2, 640*2])
         input_image = tf.Print(input_image, [tf.shape(input_image)], "resize_images")
 

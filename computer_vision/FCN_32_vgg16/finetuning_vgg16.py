@@ -36,13 +36,13 @@ parser.add_argument('--val_dir', default='/tmp/datasets/coco-animals/val')
 parser.add_argument('--model_path', default='/tmp/checkpoints/vgg_16.ckpt', type=str)
 parser.add_argument('--batch_size', default=24, type=int)
 parser.add_argument('--num_workers', default=4, type=int)
-parser.add_argument('--num_epochs1', default=20, type=int)
-parser.add_argument('--num_epochs2', default=20, type=int)
+parser.add_argument('--num_epochs1', default=10, type=int)
+parser.add_argument('--num_epochs2', default=10, type=int)
 parser.add_argument('--learning_rate1', default=1e-3, type=float)
-parser.add_argument('--learning_rate2', default=1e-5, type=float)
+parser.add_argument('--learning_rate2', default=1e-4, type=float)
 parser.add_argument('--dropout_keep_prob', default=0.5, type=float)
 parser.add_argument('--weight_decay', default=5e-4, type=float)
-parser.add_argument('--output_checkpoint', default='/tmp/models/animals_coco_vgg16/model.ckpt', type=str)
+parser.add_argument('--output_checkpoint', default='/tmp/models/animals_coco_vgg16_2/model.ckpt', type=str)
 
 VGG_MEAN = [123.68, 116.78, 103.94]
 
@@ -61,9 +61,9 @@ exit()
 def list_images(directory):
     """
     Get all the images and labels in directory/label/*.jpg
+    Than Sort the labels so that training and validation get them in the same order
     """
     labels = os.listdir(directory)
-    # Sort the labels so that training and validation get them in the same order
     labels.sort()
 
     files_and_labels = []
