@@ -1,0 +1,38 @@
+def get_yolo_training_dataset(images, labels):
+    size = (416, 416)
+    hx, hy = int(H_DIM // 2), int(V_DIM // 2)  # half_x and half_y
+    margin = hx
+
+    # offset = np.random.randint(0, 200, 1)[0]
+    print('\n loading dataset')
+    for offset in tqdm(range(0, 400, 2)):
+        y, x, mask_list, max_labels = list(), list(), list(), list()
+        for j, img in enumerate(images):
+            h, w = img.shape
+            # img_x0, img_y0, img_x1, img_y1 = labels[j][0] - hx, labels[j][1] - hy, labels[j][2] + hx, labels[j][3] + hy
+            x_mean, y_mean = (labels[j][0] + labels[j][2]) // 2, (labels[j][1] + labels[j][3]) // 2,
+            img_x0, img_y0, img_x1, img_y1 = x_mean-hx, y_mean-hy, x_mean+hx, y_mean+hy
+
+            for began in range(offset, w-400, 400):
+                # began = w-800 if i+800 > w else i
+                cropped_img = img[:, began:began+800]
+                arg_within_crop = np.argwhere(np.logical_and(img_x0 > began+margin, img_x0 < began+800-margin))
+                # max_labels.append(len(arg_within_crop))
+
+                if len(arg_within_crop) > 0:
+                    # Original boxes stored as 1D list of class, x_min, y_min, x_max, y_max.
+                    output_labels = np.zeros((10, 5))
+                    output_labels[:len(arg_within_crop), 1:] = \
+                        np.squeeze(np.stack((img_x0[arg_within_crop]-began, img_y0[arg_within_crop],
+                                             img_x1[arg_within_crop]-began, img_y1[arg_within_crop]), 1), -1)
+
+                    y.append(output_labels)
+                    resize_img = cv2.resize(cropped_img, size).astype(np.uint8)
+                    x.append(resize_img)
+
+    # normilize
+    vals_to_save = {'images': np.array(x), 'boxes': np.array(y)}
+    np.savez('./123.npz', **vals_to_save)
+    data = np.load('./123.npz')
+    print(data['images'].shape, data['boxes'].shape)
+    exit()
