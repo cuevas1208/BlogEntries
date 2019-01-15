@@ -21,21 +21,9 @@ We use TensorFlow to automatically derive the gradient for these loss-functions.
 
 There are some details of the Style Transfer algorithm not shown in this flowchart, e.g. regarding calculation of the Gram-matrices, calculation and storage of intermediate values for efficiency, a loss-function for denoising the mixed-image, and normalization of the loss-functions so they are easier to scale relative to each other.
 
-
-```python
-from IPython.display import Image, display
-Image('images/15_style_transfer_flowchart.png')
-```
-
-
-
-
 ![png](images/output_2_0.png)
 
-
-
-## Imports
-
+## Dependecies for this project
 
 ```python
 %matplotlib inline
@@ -47,17 +35,7 @@ import PIL.Image
 
 This was developed using Python 3.5.2 (Anaconda) and TensorFlow version:
 
-
-```python
-tf.__version__
-```
-
-
-
-
     '0.11.0rc0'
-
-
 
 ## VGG-16 Model
 
@@ -65,144 +43,11 @@ After having spent 2 days trying to get the style-transfer algorithm to work wit
 
 The [original paper](https://arxiv.org/abs/1508.06576) on style transfer used the VGG-19 convolutional neural network. But the pre-trained VGG-19 models for TensorFlow did not seem suitable for this tutorial for different reasons. Instead we will use the VGG-16 model, which someone else has made available and which can easily be loaded in TensorFlow. We have wrapped it in a class for convenience.
 
-
-```python
-import vgg16
-```
-
-The VGG-16 model is downloaded from the internet. This is the default directory where you want to save the data-files. The directory will be created if it does not exist.
-
-
-```python
-# vgg16.data_dir = 'vgg16/'
-```
-
-Download the data for the VGG-16 model if it doesn't already exist in the directory.
-
-**WARNING: It is 550 MB!**
-
-
-```python
-vgg16.maybe_download()
-```
-
-    Downloading VGG16 Model ...
-    Data has apparently already been downloaded and unpacked.
-    
-
-## Helper-functions for image manipulation
-
-This function loads an image and returns it as a numpy array of floating-points. The image can be automatically resized so the largest of the height or width equals `max_size`.
-
-
-```python
-def load_image(filename, max_size=None):
-    image = PIL.Image.open(filename)
-
-    if max_size is not None:
-        # Calculate the appropriate rescale-factor for
-        # ensuring a max height and width, while keeping
-        # the proportion between them.
-        factor = max_size / np.max(image.size)
-    
-        # Scale the image's height and width.
-        size = np.array(image.size) * factor
-
-        # The size is now floating-point because it was scaled.
-        # But PIL requires the size to be integers.
-        size = size.astype(int)
-
-        # Resize the image.
-        image = image.resize(size, PIL.Image.LANCZOS)
-
-    # Convert to numpy floating-point array.
-    return np.float32(image)
-```
-
-Save an image as a jpeg-file. The image is given as a numpy array with pixel-values between 0 and 255.
-
-
-```python
-def save_image(image, filename):
-    # Ensure the pixel-values are between 0 and 255.
-    image = np.clip(image, 0.0, 255.0)
-    
-    # Convert to bytes.
-    image = image.astype(np.uint8)
-    
-    # Write the image-file in jpeg-format.
-    with open(filename, 'wb') as file:
-        PIL.Image.fromarray(image).save(file, 'jpeg')
-```
-
-This function plots a large image. The image is given as a numpy array with pixel-values between 0 and 255.
-
-
-```python
-def plot_image_big(image):
-    # Ensure the pixel-values are between 0 and 255.
-    image = np.clip(image, 0.0, 255.0)
-
-    # Convert pixels to bytes.
-    image = image.astype(np.uint8)
-
-    # Convert to a PIL-image and display it.
-    display(PIL.Image.fromarray(image))
-```
-
-This function plots the content-, mixed- and style-images.
-
-
-```python
-def plot_images(content_image, style_image, mixed_image):
-    # Create figure with sub-plots.
-    fig, axes = plt.subplots(1, 3, figsize=(10, 10))
-
-    # Adjust vertical spacing.
-    fig.subplots_adjust(hspace=0.1, wspace=0.1)
-
-    # Use interpolation to smooth pixels?
-    smooth = True
-    
-    # Interpolation type.
-    if smooth:
-        interpolation = 'sinc'
-    else:
-        interpolation = 'nearest'
-
-    # Plot the content-image.
-    # Note that the pixel-values are normalized to
-    # the [0.0, 1.0] range by dividing with 255.
-    ax = axes.flat[0]
-    ax.imshow(content_image / 255.0, interpolation=interpolation)
-    ax.set_xlabel("Content")
-
-    # Plot the mixed-image.
-    ax = axes.flat[1]
-    ax.imshow(mixed_image / 255.0, interpolation=interpolation)
-    ax.set_xlabel("Mixed")
-
-    # Plot the style-image
-    ax = axes.flat[2]
-    ax.imshow(style_image / 255.0, interpolation=interpolation)
-    ax.set_xlabel("Style")
-
-    # Remove ticks from all the plots.
-    for ax in axes.flat:
-        ax.set_xticks([])
-        ax.set_yticks([])
-    
-    # Ensure the plot is shown correctly with multiple plots
-    # in a single Notebook cell.
-    plt.show()
-```
-
 ## Loss Functions
 
 These helper-functions create the loss-functions that are used in optimization with TensorFlow.
 
 This function creates a TensorFlow operation for calculating the Mean Squared Error between the two input tensors.
-
 
 ```python
 def mean_squared_error(a, b):
