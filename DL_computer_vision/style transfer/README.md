@@ -1,5 +1,3 @@
-
-# TensorFlow Tutorial #15
 # Style Transfer
 
 This is my version of the style transfer tensorflow tutorial
